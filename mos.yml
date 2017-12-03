@@ -6,6 +6,8 @@ libs_version: ${mos.version}
 modules_version: ${mos.version}
 mongoose_os_version: ${mos.version}
 
+platform: esp32
+
 sources:
   - src
 filesystem:
@@ -22,6 +24,9 @@ libs:
     # libs necessary for the current app
   - origin: https://github.com/mongoose-os-libs/arduino-onewire
   - origin: https://github.com/mongoose-os-libs/mjs
+  - origin: https://github.com/mongoose-os-libs/aws
+  #- origin: https://github.com/mongoose-os-libs/dash
+  - origin: https://github.com/mongoose-os-libs/wifi
 
 tags:
   - js
