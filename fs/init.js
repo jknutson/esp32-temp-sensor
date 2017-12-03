@@ -7,12 +7,19 @@
  * Datasheet: http://datasheets.maximintegrated.com/en/ds/DS18B20.pdf
  */
 
+load('api_config.js');
+load('api_net.js');
+load('api_mqtt.js');
 load('api_arduino_onewire.js');
 load('api_timer.js');
 load('ds18b20.js');
 
+// setup some stuff, TODO: move to mos.yml
+let oneWirePin = 14;
+let topic = '/devices/' + Cfg.get('device.id') + '/events';
+
 // Initialize OneWire library
-let ow = OneWire.create(21 /* pin */);
+let ow = OneWire.create(oneWirePin);
 
 // Number of sensors found on the 1-Wire bus
 let n = 0;
@@ -39,7 +46,7 @@ let searchSens = function() {
   return i;
 };
 
-// This function prints temperature every second
+// This function prints temperature every n milliseconds second (seconds * 1000)
 Timer.set(1000 /* milliseconds */, true /* repeat */, function() {
   if (n === 0) {
     if ((n = searchSens()) === 0) {
@@ -54,6 +61,29 @@ Timer.set(1000 /* milliseconds */, true /* repeat */, function() {
       break;
     } else {
       print('Sensor#', i, 'Temperature:', t, '*C');
+      let f_t = t * 9 / 5 + 32;
+      let message = JSON.stringify({
+        fahrenheit: f_t,
+        celcius: t
+      });
+      let ok = MQTT.pub(topic, message, 1);
+      print('Published:', ok, topic, '->', message)
     }
   }
 }, null);
+
+// Monitor network connectivity.
+Net.setStatusEventHandler(function(ev, arg) {
+  let evs = '???';
+  if (ev === Net.STATUS_DISCONNECTED) {
+    evs = 'DISCONNECTED';
+  } else if (ev === Net.STATUS_CONNECTING) {
+    evs = 'CONNECTING';
+  } else if (ev === Net.STATUS_CONNECTED) {
+    evs = 'CONNECTED';
+  } else if (ev === Net.STATUS_GOT_IP) {
+    evs = 'GOT_IP';
+  }
+  print('== Net event:', ev, evs);
+}, null);
+
